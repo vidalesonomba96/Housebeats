@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.querySelector('.toast-close-btn').addEventListener('click', removeToast);
     }
 
+    // Make createToast globally available
+    window.createToast = createToast;
+
     // Pass notification details from PHP to JS (only on full page load)
     if (typeof notificationDetails !== 'undefined' && notificationDetails.message) {
         createToast(notificationDetails.message, notificationDetails.type);
@@ -107,6 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (error) { console.error("Could not update cart:", error); }
                 };
 
+                // Make updateCart globally available
+                window.updateCart = updateCart;
+
                 const toggleMiniCart = (forceOpen = null) => {
                     const shouldOpen = forceOpen !== null ? forceOpen : !cartPanel.classList.contains('open');
                     if (shouldOpen) { updateCart(); }
@@ -136,6 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const usageTermsContainer = licenseModal.querySelector('#usage-terms-content');
                     const totalPriceEl = licenseModal.querySelector('#license-total-price');
                     const modalAddToCartBtn = licenseModal.querySelector('#modal-add-to-cart-btn');
+
+                    // Update modal beat info
+                    const modalBeatArtwork = document.getElementById('modal-beat-artwork');
+                    const modalBeatTitle = document.getElementById('modal-beat-title');
+                    const modalBeatProducer = document.getElementById('modal-beat-producer');
+                    
+                    if (modalBeatArtwork) modalBeatArtwork.src = beatData.artworkSrc;
+                    if (modalBeatTitle) modalBeatTitle.textContent = beatData.title;
+                    if (modalBeatProducer) modalBeatProducer.textContent = beatData.producer;
 
                     const licenses = {
                         'MP3 Lease': { price: beatData.priceMp3, files: 'MP3', terms: '<ul><li><i class="fas fa-microphone"></i>USED FOR MUSIC RECORDING</li><li><i class="fas fa-chart-line"></i>DISTRIBUTE UP TO 2,000 COPIES</li><li><i class="fas fa-broadcast-tower"></i>25,000 ONLINE AUDIO STREAMS</li></ul>' },
@@ -428,72 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
             switchForm(urlParams.get('form') === 'signup' ? 'signup' : 'login');
         }
 
-        // --- F. Drag & Drop File Upload (KEPT & Re-initialized) ---
-        document.querySelectorAll(".drop-zone").forEach(dropZoneElement => {
-            const inputElement = dropZoneElement.querySelector(".drop-zone__input");
-            const promptElement = dropZoneElement.querySelector(".drop-zone__prompt p");
-            const filenameElement = dropZoneElement.querySelector(".drop-zone__filename");
-
-            // Clone and replace to remove existing listeners
-            const newInputElement = inputElement.cloneNode(true);
-            inputElement.parentNode.replaceChild(newInputElement, inputElement);
-
-            const newDropZoneElement = dropZoneElement.cloneNode(true);
-            dropZoneElement.parentNode.replaceChild(newDropZoneElement, dropZoneElement);
-
-            newDropZoneElement.addEventListener("click", () => {
-                newInputElement.click();
-            });
-
-            newInputElement.addEventListener("change", () => {
-                if (newInputElement.files.length) {
-                    updateDropZone(newDropZoneElement, newInputElement.files[0]);
-                } else {
-                    updateDropZone(newDropZoneElement, null);
-                }
-            });
-
-            newDropZoneElement.addEventListener("dragover", e => {
-                e.preventDefault();
-                newDropZoneElement.classList.add("drop-zone--over");
-            });
-
-            ["dragleave", "dragend"].forEach(type => {
-                newDropZoneElement.addEventListener(type, () => {
-                    newDropZoneElement.classList.remove("drop-zone--over");
-                });
-            });
-
-            newDropZoneElement.addEventListener("drop", e => {
-                e.preventDefault();
-                newDropZoneElement.classList.remove("drop-zone--over");
-
-                if (e.dataTransfer.files.length) {
-                    newInputElement.files = e.dataTransfer.files;
-                    updateDropZone(newDropZoneElement, e.dataTransfer.files[0]);
-                } else {
-                    updateDropZone(newDropZoneElement, null);
-                }
-            });
-
-            function updateDropZone(dropZoneEl, file) {
-                const promptP = dropZoneEl.querySelector(".drop-zone__prompt p");
-                const filenameSpan = dropZoneEl.querySelector(".drop-zone__filename");
-
-                if (file) {
-                    promptP.style.display = 'none';
-                    filenameSpan.textContent = file.name;
-                } else {
-                    promptP.style.display = 'block';
-                    filenameSpan.textContent = '';
-                }
-            }
-
-            if (newInputElement.files.length) {
-                updateDropZone(newDropZoneElement, newInputElement.files[0]);
-            }
-        });
-
         // --- G. Showcase Section Overlay Content (KEPT & Re-initialized) ---
         document.querySelectorAll(".showcase-artwork").forEach(artworkElement => {
             const title = artworkElement.dataset.title;
@@ -527,26 +476,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- **FIX** DYNAMIC STYLESHEET MANAGEMENT ---
     const manageStylesheets = (path) => {
         const dashboardStylesheetId = 'dashboard-stylesheet';
-        const existingStylesheet = document.getElementById(dashboardStylesheetId);
+        const checkoutStylesheetId = 'checkout-stylesheet';
+        const uploadStylesheetId = 'upload-stylesheet';
+        
+        const existingDashboard = document.getElementById(dashboardStylesheetId);
+        const existingCheckout = document.getElementById(checkoutStylesheetId);
+        const existingUpload = document.getElementById(uploadStylesheetId);
 
-        // If navigating TO the dashboard page
+        // Remove all page-specific stylesheets first
+        if (existingDashboard) existingDashboard.remove();
+        if (existingCheckout) existingCheckout.remove();
+        if (existingUpload) existingUpload.remove();
+
+        // Add the appropriate stylesheet for the current page
         if (path.includes('dashboard.php')) {
-            // And the stylesheet doesn't already exist in the head
-            if (!existingStylesheet) {
-                const link = document.createElement('link');
-                link.id = dashboardStylesheetId;
-                link.rel = 'stylesheet';
-                link.href = 'src/css/dashboard.css';
-                document.head.appendChild(link);
-            }
-        } 
-        // If navigating AWAY from the dashboard page
-        else {
-            // And the stylesheet exists
-            if (existingStylesheet) {
-                // Remove it from the head to prevent style conflicts
-                existingStylesheet.remove();
-            }
+            const link = document.createElement('link');
+            link.id = dashboardStylesheetId;
+            link.rel = 'stylesheet';
+            link.href = 'src/css/dashboard.css';
+            document.head.appendChild(link);
+        } else if (path.includes('checkout.php')) {
+            const link = document.createElement('link');
+            link.id = checkoutStylesheetId;
+            link.rel = 'stylesheet';
+            link.href = 'src/css/checkout.css';
+            document.head.appendChild(link);
+        } else if (path.includes('upload.php')) {
+            const link = document.createElement('link');
+            link.id = uploadStylesheetId;
+            link.rel = 'stylesheet';
+            link.href = 'src/css/upload.css';
+            document.head.appendChild(link);
         }
     };
 
@@ -603,9 +563,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         // --- Re-initialize all page-specific scripts for the new content ---
                         initializePageScripts();
 
-                        // Specific re-initialization for dashboard.js if it exists and dashboard is loaded
-                        if (target.pathname.includes('dashboard.php') && typeof initializeDashboardScripts === 'function') {
-                            initializeDashboardScripts(); // Call dashboard specific JS init
+                        // Specific re-initialization for page-specific scripts
+                        if (target.pathname.includes('dashboard.php') && typeof initializeDashboard === 'function') {
+                            initializeDashboard();
+                        }
+                        if (target.pathname.includes('checkout.php') && typeof initializeCheckout === 'function') {
+                            initializeCheckout();
+                        }
+                        if (target.pathname.includes('upload.php') && typeof initializeUpload === 'function') {
+                            initializeUpload();
                         }
 
                         // Remove loading indicator
@@ -655,9 +621,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Re-initialize scripts for the restored content
                         initializePageScripts();
 
-                        // Specific re-initialization for dashboard.js if dashboard is loaded
-                        if (window.location.pathname.includes('dashboard.php') && typeof initializeDashboardScripts === 'function') {
-                            initializeDashboardScripts();
+                        // Specific re-initialization for page-specific scripts
+                        if (window.location.pathname.includes('dashboard.php') && typeof initializeDashboard === 'function') {
+                            initializeDashboard();
+                        }
+                        if (window.location.pathname.includes('checkout.php') && typeof initializeCheckout === 'function') {
+                            initializeCheckout();
+                        }
+                        if (window.location.pathname.includes('upload.php') && typeof initializeUpload === 'function') {
+                            initializeUpload();
                         }
                     }
                     document.body.classList.remove('loading-page');
@@ -671,93 +643,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Dynamic Script Loader ---
-    const loadedScripts = {};
-    function loadScript(src, callback) {
-        if (loadedScripts[src]) {
-            if (callback) callback();
-            return;
-        }
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = () => {
-            console.log(`${src} loaded successfully.`);
-            loadedScripts[src] = true;
-            if (callback) callback();
-        };
-        script.onerror = () => console.error(`Error loading script: ${src}`);
-        document.body.appendChild(script);
+    // Initialize page-specific scripts on first load
+    if (window.location.pathname.includes('dashboard.php') && typeof initializeDashboard === 'function') {
+        initializeDashboard();
     }
-
-    // --- AJAX Navigation Logic ---
-    function handleNavigation(url) {
-        document.body.classList.add('loading-page');
-        const ajaxUrl = new URL(url);
-        ajaxUrl.searchParams.set('ajax', 'true');
-
-        fetch(ajaxUrl.toString())
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok.');
-                return response.text();
-            })
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newMain = doc.querySelector('main');
-                const newTitle = doc.querySelector('title');
-
-                if (newMain) document.querySelector('main').innerHTML = newMain.innerHTML;
-                if (newTitle) document.title = newTitle.textContent;
-
-                window.scrollTo(0, 0);
-                initializePageScripts();
-
-                if (url.includes('dashboard.php')) {
-                    loadScript('src/js/dashboard.js', initializeDashboard);
-                }
-
-                document.body.classList.remove('loading-page');
-            })
-            .catch(error => {
-                console.error('AJAX navigation failed:', error);
-                window.location.href = url;
-            });
+    if (window.location.pathname.includes('checkout.php') && typeof initializeCheckout === 'function') {
+        initializeCheckout();
     }
-
-    // --- Main Click Handler for Navigation ---
-    document.addEventListener('click', (e) => {
-        const target = e.target.closest('a');
-        if (!target) return;
-
-        const isNonNavigable = !target.href || !target.href.startsWith(window.location.origin) ||
-                                target.target === '_blank' || target.hasAttribute('download') ||
-                                target.classList.contains('logout-btn') || target.classList.contains('logout-btn-dashboard') ||
-                                target.closest('#mini-cart-panel');
-
-        const isSamePageAnchor = target.pathname === window.location.pathname &&
-                                 target.search === window.location.search &&
-                                 target.hash && target.getAttribute('href').startsWith('#');
-
-        if (!isNonNavigable && !isSamePageAnchor) {
-            e.preventDefault();
-            const destinationUrl = target.href;
-            if (destinationUrl !== window.location.href) {
-                history.pushState({ path: destinationUrl }, '', destinationUrl);
-                handleNavigation(destinationUrl);
-            }
-        }
-    });
-
-    // --- Browser Back/Forward Button Handler ---
-    window.addEventListener('popstate', (e) => {
-        if (e.state && e.state.path) {
-            handleNavigation(e.state.path);
-        }
-    });
-
-    // --- Initial Setup on First Page Load ---
-    initializePageScripts();
-    if (window.location.pathname.includes('dashboard.php')) {
-        loadScript('src/js/dashboard.js', initializeDashboard);
+    if (window.location.pathname.includes('upload.php') && typeof initializeUpload === 'function') {
+        initializeUpload();
     }
 });

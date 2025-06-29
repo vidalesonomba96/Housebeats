@@ -52,6 +52,9 @@
 <?php if (basename($_SERVER['PHP_SELF']) == 'checkout.php'): ?>
 <script src="src/js/checkout.js"></script>
 <?php endif; ?>
+<?php if (basename($_SERVER['PHP_SELF']) == 'upload.php'): ?>
+<script src="src/js/upload.js"></script>
+<?php endif; ?>
 
 </body>
 </html>

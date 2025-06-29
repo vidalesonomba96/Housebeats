@@ -25,18 +25,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'true') {
 
         <section class="upload-section">
             <div class="container">
-                <h2>Upload Your Beat</h2>
-                <p>Fill out the details below to add your track to the marketplace.</p>
+                <div class="upload-header">
+                    <h2>Upload Your Beat</h2>
+                    <p>Fill out the details below to add your track to the marketplace.</p>
+                </div>
 
-                <form action="handle_upload.php" method="POST" enctype="multipart/form-data" class="upload-form">
+                <form action="handle_upload.php" method="POST" enctype="multipart/form-data" class="upload-form" id="upload-form">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="title">Beat Title</label>
+                            <label for="title">Beat Title *</label>
                             <input type="text" id="title" name="title" placeholder="e.g., Sunset Drive" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="genre">Genre</label>
+                            <label for="genre">Genre *</label>
                             <input type="text" id="genre" name="genre" placeholder="e.g., Lofi, Trap, Drill" required>
                         </div>
 
@@ -46,52 +48,54 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'true') {
                         </div>
                         
                         <div class="form-group">
-                            <label for="price_mp3">MP3 Lease Price ($)</label>
-                            <input type="number" id="price_mp3" name="price_mp3" step="0.01" placeholder="e.g., 29.99" required>
+                            <label for="price_mp3">MP3 Lease Price ($) *</label>
+                            <input type="number" id="price_mp3" name="price_mp3" step="0.01" min="0" placeholder="e.g., 29.99" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="price_wav">WAV Lease Price ($)</label>
-                            <input type="number" id="price_wav" name="price_wav" step="0.01" placeholder="e.g., 49.99" required>
+                            <label for="price_wav">WAV Lease Price ($) *</label>
+                            <input type="number" id="price_wav" name="price_wav" step="0.01" min="0" placeholder="e.g., 49.99" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="price_unlimited">Unlimited Lease Price ($)</label>
-                            <input type="number" id="price_unlimited" name="price_unlimited" step="0.01" placeholder="e.g., 99.99" required>
+                            <label for="price_unlimited">Unlimited Lease Price ($) *</label>
+                            <input type="number" id="price_unlimited" name="price_unlimited" step="0.01" min="0" placeholder="e.g., 99.99" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="bpm">BPM</label>
-                            <input type="number" id="bpm" name="bpm" placeholder="e.g., 120" required>
+                            <label for="bpm">BPM *</label>
+                            <input type="number" id="bpm" name="bpm" min="1" max="300" placeholder="e.g., 120" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="key">Key</label>
+                            <label for="key">Key *</label>
                             <input type="text" id="key" name="key" placeholder="e.g., C# Minor" required>
                         </div>
 
                         <div class="form-group full-width">
-                            <label for="artwork">Artwork (Image File)</label>
-                            <div class="drop-zone" id="artwork-drop-zone">
+                            <label for="artwork">Artwork (Image File) *</label>
+                            <div class="drop-zone" data-input="artwork">
                                 <input type="file" id="artwork" name="artwork" accept="image/*" required class="drop-zone__input">
                                 <div class="drop-zone__prompt">
                                     <i class="fas fa-cloud-upload-alt"></i>
-                                    <p>Drag & Drop your artwork here or <span>click to browse</span></p>
+                                    <p>Drag & Drop your artwork here or <span class="browse-link">click to browse</span></p>
                                     <span class="drop-zone__filename"></span>
                                 </div>
                             </div>
+                            <small class="form-help">Supported formats: JPG, PNG, GIF. Max size: 5MB</small>
                         </div>
 
                         <div class="form-group full-width">
-                            <label for="audio">Audio File (MP3, WAV)</label>
-                            <div class="drop-zone" id="audio-drop-zone">
+                            <label for="audio">Audio File (MP3, WAV) *</label>
+                            <div class="drop-zone" data-input="audio">
                                 <input type="file" id="audio" name="audio" accept="audio/*" required class="drop-zone__input">
                                 <div class="drop-zone__prompt">
                                     <i class="fas fa-file-audio"></i>
-                                    <p>Drag & Drop your audio here or <span>click to browse</span></p>
+                                    <p>Drag & Drop your audio here or <span class="browse-link">click to browse</span></p>
                                     <span class="drop-zone__filename"></span>
                                 </div>
                             </div>
+                            <small class="form-help">Supported formats: MP3, WAV. Max size: 50MB</small>
                         </div>
                     </div>
 
@@ -100,7 +104,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'true') {
                         <label for="is_featured">Feature this beat on the homepage?</label>
                     </div>
 
-                    <button type="submit" class="submit-btn">Upload Beat</button>
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn" id="upload-submit-btn">
+                            <i class="fas fa-upload"></i>
+                            Upload Beat
+                        </button>
+                        <button type="button" class="cancel-btn" onclick="window.history.back()">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                    </div>
                 </form>
             </div>
         </section>

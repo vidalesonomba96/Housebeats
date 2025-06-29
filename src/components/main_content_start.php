@@ -19,6 +19,9 @@
     <?php if (basename($_SERVER['PHP_SELF']) == 'checkout.php'): ?>
         <link rel="stylesheet" href="src/css/checkout.css">
     <?php endif; ?>
+    <?php if (basename($_SERVER['PHP_SELF']) == 'upload.php'): ?>
+        <link rel="stylesheet" href="src/css/upload.css">
+    <?php endif; ?>
 
     <link rel="icon" type="image/png" href="src/assets/logoleft.png">
     
