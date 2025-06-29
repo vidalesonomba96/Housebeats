@@ -16,6 +16,9 @@
     <?php if (basename($_SERVER['PHP_SELF']) == 'dashboard.php'): ?>
         <link rel="stylesheet" href="src/css/dashboard.css">
     <?php endif; ?>
+    <?php if (basename($_SERVER['PHP_SELF']) == 'checkout.php'): ?>
+        <link rel="stylesheet" href="src/css/checkout.css">
+    <?php endif; ?>
 
     <link rel="icon" type="image/png" href="src/assets/logoleft.png">
     

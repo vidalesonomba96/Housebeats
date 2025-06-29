@@ -42,9 +42,15 @@
     </div>
 </div>
 
+<!-- Include License Modal -->
+<?php include 'src/components/license_modal.php'; ?>
+
 <script src="src/js/main.js"></script>
 <?php if (basename($_SERVER['PHP_SELF']) == 'dashboard.php'): ?>
 <script src="src/js/dashboard.js"></script>
+<?php endif; ?>
+<?php if (basename($_SERVER['PHP_SELF']) == 'checkout.php'): ?>
+<script src="src/js/checkout.js"></script>
 <?php endif; ?>
 
 </body>
