@@ -72,7 +72,7 @@ function initializeUpload() {
     function validateForm() {
         const requiredFields = [
             'title', 'genre', 'price_mp3', 'price_wav', 
-            'price_unlimited', 'bpm', 'key', 'artwork', 'audio'
+            'price_unlimited', 'bpm', 'key'
         ];
 
         let isValid = true;
@@ -149,21 +149,36 @@ function initializeUpload() {
     }
 
     function initializeDropZones() {
-        document.querySelectorAll(".drop-zone").forEach(dropZoneElement => {
+        console.log("Initializing drop zones...");
+        
+        const dropZones = document.querySelectorAll(".drop-zone");
+        console.log("Found drop zones:", dropZones.length);
+
+        dropZones.forEach((dropZoneElement, index) => {
+            console.log(`Setting up drop zone ${index + 1}`);
+            
             const inputElement = dropZoneElement.querySelector(".drop-zone__input");
-            const promptElement = dropZoneElement.querySelector(".drop-zone__prompt p");
+            const promptElement = dropZoneElement.querySelector(".drop-zone__prompt");
             const filenameElement = dropZoneElement.querySelector(".drop-zone__filename");
 
-            if (!inputElement) return;
+            if (!inputElement) {
+                console.error("No input element found in drop zone", dropZoneElement);
+                return;
+            }
 
-            // Click to browse
+            console.log("Input element found:", inputElement.id);
+
+            // Click to browse - attach to the entire drop zone
             dropZoneElement.addEventListener("click", (e) => {
+                console.log("Drop zone clicked");
                 e.preventDefault();
+                e.stopPropagation();
                 inputElement.click();
             });
 
             // File input change
             inputElement.addEventListener("change", (e) => {
+                console.log("File input changed", e.target.files);
                 if (inputElement.files.length) {
                     updateDropZone(dropZoneElement, inputElement.files[0]);
                 } else {
@@ -171,72 +186,105 @@ function initializeUpload() {
                 }
             });
 
-            // Drag over
-            dropZoneElement.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                dropZoneElement.classList.add("drop-zone--over");
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZoneElement.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
             });
 
-            // Drag leave
-            ["dragleave", "dragend"].forEach(type => {
-                dropZoneElement.addEventListener(type, (e) => {
-                    e.preventDefault();
-                    dropZoneElement.classList.remove("drop-zone--over");
-                });
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZoneElement.addEventListener(eventName, highlight, false);
             });
 
-            // Drop
-            dropZoneElement.addEventListener("drop", (e) => {
-                e.preventDefault();
-                dropZoneElement.classList.remove("drop-zone--over");
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZoneElement.addEventListener(eventName, unhighlight, false);
+            });
 
-                if (e.dataTransfer.files.length) {
-                    const file = e.dataTransfer.files[0];
+            // Handle dropped files
+            dropZoneElement.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight(e) {
+                console.log("Drag highlight");
+                dropZoneElement.classList.add('drop-zone--over');
+            }
+
+            function unhighlight(e) {
+                console.log("Drag unhighlight");
+                dropZoneElement.classList.remove('drop-zone--over');
+            }
+
+            function handleDrop(e) {
+                console.log("File dropped", e.dataTransfer.files);
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    const file = files[0];
                     
-                    // Create a new FileList-like object
+                    // Set the file to the input
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     inputElement.files = dataTransfer.files;
                     
+                    // Trigger change event
+                    const changeEvent = new Event('change', { bubbles: true });
+                    inputElement.dispatchEvent(changeEvent);
+                    
                     updateDropZone(dropZoneElement, file);
                 }
-            });
+            }
 
             function updateDropZone(dropZoneEl, file) {
+                console.log("Updating drop zone with file:", file);
+                
                 const promptP = dropZoneEl.querySelector(".drop-zone__prompt p");
                 const filenameSpan = dropZoneEl.querySelector(".drop-zone__filename");
                 const icon = dropZoneEl.querySelector(".drop-zone__prompt i");
 
                 if (file) {
-                    promptP.style.display = 'none';
-                    filenameSpan.textContent = file.name;
-                    filenameSpan.style.display = 'block';
+                    if (promptP) promptP.style.display = 'none';
+                    if (filenameSpan) {
+                        filenameSpan.textContent = file.name;
+                        filenameSpan.style.display = 'block';
+                    }
                     dropZoneEl.classList.add('has-file');
                     
                     // Update icon based on file type
-                    if (file.type.startsWith('image/')) {
-                        icon.className = 'fas fa-image';
-                    } else if (file.type.startsWith('audio/')) {
-                        icon.className = 'fas fa-music';
+                    if (icon) {
+                        if (file.type.startsWith('image/')) {
+                            icon.className = 'fas fa-image';
+                        } else if (file.type.startsWith('audio/')) {
+                            icon.className = 'fas fa-music';
+                        }
                     }
                 } else {
-                    promptP.style.display = 'block';
-                    filenameSpan.textContent = '';
-                    filenameSpan.style.display = 'none';
+                    if (promptP) promptP.style.display = 'block';
+                    if (filenameSpan) {
+                        filenameSpan.textContent = '';
+                        filenameSpan.style.display = 'none';
+                    }
                     dropZoneEl.classList.remove('has-file');
                     
                     // Reset icon
-                    const inputType = dropZoneEl.dataset.input;
-                    if (inputType === 'artwork') {
-                        icon.className = 'fas fa-cloud-upload-alt';
-                    } else if (inputType === 'audio') {
-                        icon.className = 'fas fa-file-audio';
+                    if (icon) {
+                        const inputId = inputElement.id;
+                        if (inputId === 'artwork') {
+                            icon.className = 'fas fa-cloud-upload-alt';
+                        } else if (inputId === 'audio') {
+                            icon.className = 'fas fa-file-audio';
+                        }
                     }
                 }
             }
 
             // Initialize with existing files if any
-            if (inputElement.files.length) {
+            if (inputElement.files && inputElement.files.length) {
                 updateDropZone(dropZoneElement, inputElement.files[0]);
             }
         });
