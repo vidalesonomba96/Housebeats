@@ -1,0 +1,107 @@
+/* --- Professional Notification Styles --- */
+
+.notification-container {
+    position: fixed;
+    top: 80px; /* Position below the header */
+    right: 20px;
+    z-index: 1050; /* Ensure it's above most other content */
+    width: 100%;
+    max-width: 380px;
+}
+
+.notification {
+    position: relative;
+    padding: 1.25rem 2.5rem 1.25rem 1.5rem; /* Make space for the close button */
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    opacity: 0;
+    transform: translateX(100%);
+    animation: slideIn 0.5s forwards;
+}
+
+/* --- Notification Types --- */
+
+/* Success - Green */
+.notification.success {
+    color: #c1f0c1;
+    background-color: #1a3c1a;
+    border-color: #2a5c2a;
+}
+.notification.success .icon {
+    color: #4CAF50;
+}
+
+/* Error - Red */
+.notification.error {
+    color: #f8d7da;
+    background-color: #4a1c20;
+    border-color: #722c33;
+}
+.notification.error .icon {
+    color: #f44336;
+}
+
+/* Info - Blue (you can add this type later if needed) */
+.notification.info {
+    color: #d1ecf1;
+    background-color: #1c3d4a;
+    border-color: #2c5f73;
+}
+.notification.info .icon {
+    color: #2196F3;
+}
+
+.notification .icon {
+    font-size: 1.5rem;
+}
+
+.notification .message {
+    flex-grow: 1;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.notification .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.notification .close-btn:hover {
+    opacity: 1;
+}
+
+
+/* --- Animation --- */
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+/* --- Add this new code to the bottom of your file --- */
+
+/* Class to trigger the fade-out animation */
+.notification.fade-out {
+    animation: fadeOut 0.5s 0.5s forwards; /* Start fadeOut after a 0.5s delay */
+}
+
+/* --- New Fade Out Animation --- */
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}

@@ -1,0 +1,294 @@
+/* --- Professional Upload Page Styles --- */
+
+/* Add this to give the page a background and padding */
+.main-container {
+    padding: 40px 15px;
+    background: #121212;
+}
+
+.upload-container {
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 40px 50px;
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    border: 1px solid #2c2c2c;
+}
+
+.upload-container h1 {
+    text-align: center;
+    color: #e5e7eb;
+    margin-bottom: 10px;
+    font-size: 2.25rem;
+    font-weight: 700;
+}
+
+/* Add this for the subtitle */
+.upload-subtitle {
+    text-align: center;
+    color: #9ca3af;
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+}
+
+/* Add this for section titles */
+.form-section {
+    padding-bottom: 25px;
+    border-bottom: 1px solid #2c2c2c;
+}
+.form-section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    background-color: #2a2a2a;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    color: #e5e7eb;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #3b82f6; /* Use your primary color */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+}
+
+.checkbox-group label {
+    color: #e5e7eb;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 1.2em;
+    height: 1.2em;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+/* --- Improved Drag and Drop Zones --- */
+.drop-zone {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    color: #9ca3af;
+    background-color: #2a2a2a;
+    border: 2px dashed #374151;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 150px;
+    overflow: hidden;
+}
+
+.drop-zone:hover, .drop-zone--over {
+    border-color: #3b82f6;
+    color: #e5e7eb;
+}
+
+.drop-zone__input {
+    display: none;
+}
+
+.drop-zone__prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.drop-zone__prompt i {
+    font-size: 2rem;
+    color: #6b7280;
+}
+
+.drop-zone__thumb {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drop-zone__thumb::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 8px 0;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    font-size: 14px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-upload {
+    width: 100%;
+    padding: 15px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-upload:hover {
+    background: #2563eb;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .upload-container {
+        padding: 20px;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* --- Add these new styles to your src/css/upload.css file --- */
+
+/* Style for the select dropdowns */
+/* --- NEW Professional Dropdown Styles --- ADD OR REPLACE WITH THIS --- */
+.form-group select {
+    width: 100%;
+    padding: 12px 40px 12px 12px; /* Add padding to the right to not overlap text with the arrow */
+    background-color: #2a2a2a;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    color: #e5e7eb;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    
+    /* --- The Key to a Custom Look --- */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    /* --- High-Quality SVG Arrow --- */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' class='feather feather-chevron-down'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2em;
+}
+
+/* Style for the placeholder/disabled option */
+.form-group select:required:invalid {
+    color: #6b7280; /* A lighter color for placeholder text */
+}
+
+.form-group select option {
+    background-color: #2a2a2a;
+    color: #e5e7eb;
+}
+
+/* --- Refined Focus State --- */
+.form-group select:focus {
+    outline: none;
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Pinned price display styles */
+.price-grid {
+    grid-template-columns: repeat(3, 1fr); /* Ensure 3 columns for prices */
+}
+
+.price-item {
+    background-color: #2a2a2a;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.price-license {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #e5e7eb;
+}
+
+.price-amount {
+    font-weight: 700;
+    font-size: 1.75rem;
+    color: #3b82f6; /* Highlight color */
+    margin: 5px 0;
+}
+
+.price-format {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+/* Section description text */
+.section-description {
+    color: #9ca3af;
+    margin-top: -15px;
+    margin-bottom: 20px;
+    text-align: center;
+}
