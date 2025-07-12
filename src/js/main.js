@@ -52,10 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.querySelector('.toast-close-btn').addEventListener('click', removeToast);
     }
 
-    // Display initial notification if it exists from a previous page load
-    if (typeof notificationDetails !== 'undefined' && notificationDetails.message) {
-        createToast(notificationDetails.message, notificationDetails.type);
-    }
+    // Make createToast globally available
+    window.createToast = createToast;
 
     /**
      * Sends a POST request with JSON data.
@@ -193,6 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Global Music Player
         const player = document.getElementById('global-player');
         if (player) {
+            console.log('Initializing global player...');
+            
             const audio = document.getElementById('global-audio');
             const playPauseGlobalBtn = document.getElementById('play-pause-btn-global');
             const nextBtn = document.getElementById('next-btn');
@@ -208,54 +208,72 @@ document.addEventListener('DOMContentLoaded', () => {
             const playerBpm = document.getElementById('player-bpm');
             const playerKey = document.getElementById('player-key');
             const playerMood = document.getElementById('player-mood');
+            const volumeSlider = document.getElementById('volume-slider');
             
+            // Get all beat cards on the current page
             const beatCards = Array.from(document.querySelectorAll('.beat-card'));
-            const playlist = beatCards.map(card => card.dataset);
+            const playlist = beatCards.map(card => ({
+                beatId: card.dataset.beatId,
+                title: card.dataset.title,
+                producer: card.dataset.producer,
+                artworkSrc: card.dataset.artworkSrc,
+                audioSrc: card.dataset.audioSrc,
+                genre: card.dataset.genre,
+                bpm: card.dataset.bpm,
+                key: card.dataset.key,
+                mood: card.dataset.mood
+            }));
+            
             let currentTrackIndex = -1;
             let isPlaying = false;
+            
+            console.log('Found', playlist.length, 'tracks in playlist');
             
             // Load saved player state on page load
             const savedState = loadPlayerState();
             if (savedState && savedState.currentTrack) {
-                // Find the track in current playlist or use saved data
+                console.log('Loading saved player state:', savedState);
+                
+                // Find the track in current playlist
                 const trackIndex = playlist.findIndex(track => 
                     track.beatId === savedState.currentTrack.beatId
                 );
                 
                 if (trackIndex !== -1) {
                     // Track found in current playlist
+                    console.log('Track found in current playlist at index:', trackIndex);
                     loadTrack(trackIndex, false);
-                    if (savedState.currentTime) {
-                        audio.currentTime = savedState.currentTime;
-                    }
-                    if (savedState.isPlaying) {
-                        playTrack();
-                    }
                 } else {
                     // Track not in current playlist, use saved data
+                    console.log('Track not in current playlist, using saved data');
                     loadTrackFromSavedData(savedState.currentTrack);
-                    if (savedState.currentTime) {
+                }
+                
+                // Restore playback position and state
+                audio.addEventListener('loadedmetadata', () => {
+                    if (savedState.currentTime && savedState.currentTime > 0) {
                         audio.currentTime = savedState.currentTime;
                     }
                     if (savedState.isPlaying) {
                         playTrack();
                     }
-                }
+                }, { once: true });
+                
                 player.classList.add('visible');
             }
 
             const loadTrack = (index, autoPlay = true) => {
-                if (index < 0 || index >= playlist.length) return;
+                if (index < 0 || index >= playlist.length) {
+                    console.warn('Invalid track index:', index);
+                    return;
+                }
+                
                 currentTrackIndex = index;
                 const track = playlist[index];
                 
-                playerTitle.textContent = track.title || 'Unknown Track';
-                playerProducer.textContent = track.producer || 'Unknown Producer';
-                playerArtwork.src = track.artworkSrc || 'https://placehold.co/56';
-                if (playerGenre) playerGenre.textContent = track.genre || '';
-                if (playerBpm) playerBpm.textContent = track.bpm ? `${track.bpm} BPM` : '';
-                if (playerKey) playerKey.textContent = track.key || '';
-                if (playerMood) playerMood.textContent = track.mood || '';
+                console.log('Loading track:', track);
+                
+                updatePlayerUI(track);
                 audio.src = track.audioSrc;
                 
                 // Save current track state
@@ -266,51 +284,77 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 if (autoPlay) {
-                    playTrack();
+                    // Wait for audio to be ready before playing
+                    audio.addEventListener('canplay', () => {
+                        playTrack();
+                    }, { once: true });
                 }
+                
                 player.classList.add('visible');
+                updateAllCardIcons();
             };
             
             const loadTrackFromSavedData = (trackData) => {
                 currentTrackIndex = -1; // Not in current playlist
                 
-                playerTitle.textContent = trackData.title || 'Unknown Track';
-                playerProducer.textContent = trackData.producer || 'Unknown Producer';
-                playerArtwork.src = trackData.artworkSrc || 'https://placehold.co/56';
-                if (playerGenre) playerGenre.textContent = trackData.genre || '';
-                if (playerBpm) playerBpm.textContent = trackData.bpm ? `${trackData.bpm} BPM` : '';
-                if (playerKey) playerKey.textContent = trackData.key || '';
-                if (playerMood) playerMood.textContent = trackData.mood || '';
+                console.log('Loading track from saved data:', trackData);
+                
+                updatePlayerUI(trackData);
                 audio.src = trackData.audioSrc;
                 
                 player.classList.add('visible');
+                updateAllCardIcons();
+            };
+            
+            const updatePlayerUI = (track) => {
+                if (playerTitle) playerTitle.textContent = track.title || 'Unknown Track';
+                if (playerProducer) playerProducer.textContent = track.producer || 'Unknown Producer';
+                if (playerArtwork) playerArtwork.src = track.artworkSrc || 'https://placehold.co/56';
+                if (playerGenre) playerGenre.textContent = track.genre || '';
+                if (playerBpm) playerBpm.textContent = track.bpm ? `${track.bpm} BPM` : '';
+                if (playerKey) playerKey.textContent = track.key || '';
+                if (playerMood) playerMood.textContent = track.mood || '';
             };
 
             const playTrack = () => {
-                isPlaying = true;
-                audio.play().catch(e => console.error("Audio play failed:", e));
-                playPauseGlobalBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                updateAllCardIcons();
-                
-                // Update saved state
-                const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
-                if (currentTrack) {
-                    savePlayerState({
-                        currentTrack: currentTrack,
-                        currentTime: audio.currentTime,
-                        isPlaying: true
-                    });
+                if (!audio.src) {
+                    console.warn('No audio source set');
+                    return;
                 }
+                
+                isPlaying = true;
+                audio.play().then(() => {
+                    console.log('Audio playing successfully');
+                    if (playPauseGlobalBtn) {
+                        playPauseGlobalBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    }
+                    updateAllCardIcons();
+                    
+                    // Update saved state
+                    const currentTrack = getCurrentTrack();
+                    if (currentTrack) {
+                        savePlayerState({
+                            currentTrack: currentTrack,
+                            currentTime: audio.currentTime,
+                            isPlaying: true
+                        });
+                    }
+                }).catch(e => {
+                    console.error("Audio play failed:", e);
+                    isPlaying = false;
+                });
             };
 
             const pauseTrack = () => {
                 isPlaying = false;
                 audio.pause();
-                playPauseGlobalBtn.innerHTML = '<i class="fas fa-play"></i>';
+                if (playPauseGlobalBtn) {
+                    playPauseGlobalBtn.innerHTML = '<i class="fas fa-play"></i>';
+                }
                 updateAllCardIcons();
                 
                 // Update saved state
-                const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                const currentTrack = getCurrentTrack();
                 if (currentTrack) {
                     savePlayerState({
                         currentTrack: currentTrack,
@@ -319,14 +363,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             };
+            
+            const getCurrentTrack = () => {
+                if (currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
+                    return playlist[currentTrackIndex];
+                }
+                // If not in current playlist, try to get from saved state
+                const savedState = loadPlayerState();
+                return savedState ? savedState.currentTrack : null;
+            };
 
             const updateAllCardIcons = () => {
                 beatCards.forEach((card, index) => {
                     const icon = card.querySelector('.play-pause-btn-card i');
                     if (icon) {
-                        icon.className = `fas fa-${index === currentTrackIndex && isPlaying ? 'pause' : 'play'}`;
+                        const isCurrentTrack = index === currentTrackIndex || 
+                            (currentTrackIndex === -1 && card.dataset.beatId === getCurrentTrack()?.beatId);
+                        icon.className = `fas fa-${isCurrentTrack && isPlaying ? 'pause' : 'play'}`;
                     }
-                    card.classList.toggle('is-playing', index === currentTrackIndex);
+                    
+                    const isCurrentTrack = index === currentTrackIndex || 
+                        (currentTrackIndex === -1 && card.dataset.beatId === getCurrentTrack()?.beatId);
+                    card.classList.toggle('is-playing', isCurrentTrack && isPlaying);
                 });
             };
 
@@ -342,36 +400,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
-            playPauseGlobalBtn?.addEventListener('click', () => (isPlaying ? pauseTrack() : playTrack()));
-            nextBtn?.addEventListener('click', playNext);
-            prevBtn?.addEventListener('click', playPrev);
+            // Event Listeners
+            if (playPauseGlobalBtn) {
+                playPauseGlobalBtn.addEventListener('click', () => {
+                    console.log('Play/pause clicked, isPlaying:', isPlaying);
+                    if (isPlaying) {
+                        pauseTrack();
+                    } else {
+                        playTrack();
+                    }
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', playNext);
+            }
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', playPrev);
+            }
 
+            // Audio event listeners
             audio.addEventListener('timeupdate', () => {
                 if (audio.duration) {
-                    progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+                    const progressPercent = (audio.currentTime / audio.duration) * 100;
+                    if (progress) progress.style.width = `${progressPercent}%`;
+                    
                     const formatTime = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-                    currentTimeEl.textContent = formatTime(audio.currentTime);
-                    totalTimeEl.textContent = formatTime(audio.duration);
+                    if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
+                    if (totalTimeEl) totalTimeEl.textContent = formatTime(audio.duration);
                     
                     // Periodically save current time
-                    const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
-                    if (currentTrack && Math.floor(audio.currentTime) % 5 === 0) { // Save every 5 seconds
-                        savePlayerState({
-                            currentTrack: currentTrack,
-                            currentTime: audio.currentTime,
-                            isPlaying: isPlaying
-                        });
+                    if (Math.floor(audio.currentTime) % 5 === 0) { // Save every 5 seconds
+                        const currentTrack = getCurrentTrack();
+                        if (currentTrack) {
+                            savePlayerState({
+                                currentTrack: currentTrack,
+                                currentTime: audio.currentTime,
+                                isPlaying: isPlaying
+                            });
+                        }
                     }
                 }
             });
             
             audio.addEventListener('ended', () => {
+                console.log('Track ended, playing next');
                 playNext();
             });
             
             audio.addEventListener('pause', () => {
-                // Update state when audio is paused
-                const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                console.log('Audio paused');
+                const currentTrack = getCurrentTrack();
                 if (currentTrack) {
                     savePlayerState({
                         currentTrack: currentTrack,
@@ -380,28 +460,61 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
-
-            progressBar?.addEventListener('click', (e) => {
-                if(audio.duration) {
-                    audio.currentTime = (e.offsetX / progressBar.clientWidth) * audio.duration;
+            
+            audio.addEventListener('play', () => {
+                console.log('Audio started playing');
+                const currentTrack = getCurrentTrack();
+                if (currentTrack) {
+                    savePlayerState({
+                        currentTrack: currentTrack,
+                        currentTime: audio.currentTime,
+                        isPlaying: true
+                    });
                 }
             });
 
-            beatCards.forEach((card, index) => {
-                card.querySelector('.play-pause-btn-card')?.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (currentTrackIndex === index && isPlaying) {
-                        pauseTrack();
-                    } else {
-                        loadTrack(index);
+            // Progress bar click
+            if (progressBar) {
+                progressBar.addEventListener('click', (e) => {
+                    if (audio.duration) {
+                        const clickX = e.offsetX;
+                        const width = progressBar.clientWidth;
+                        const newTime = (clickX / width) * audio.duration;
+                        audio.currentTime = newTime;
                     }
                 });
+            }
+            
+            // Volume control
+            if (volumeSlider) {
+                volumeSlider.addEventListener('input', (e) => {
+                    audio.volume = e.target.value;
+                });
+                // Set initial volume
+                audio.volume = volumeSlider.value;
+            }
+
+            // Beat card play buttons
+            beatCards.forEach((card, index) => {
+                const playBtn = card.querySelector('.play-pause-btn-card');
+                if (playBtn) {
+                    playBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log('Beat card play button clicked for index:', index);
+                        
+                        if (currentTrackIndex === index && isPlaying) {
+                            pauseTrack();
+                        } else {
+                            loadTrack(index);
+                        }
+                    });
+                }
             });
             
-            // Clear player state when page is unloaded (optional)
+            // Save state when page is about to unload
             window.addEventListener('beforeunload', () => {
                 if (audio.src && !audio.paused) {
-                    const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                    const currentTrack = getCurrentTrack();
                     if (currentTrack) {
                         savePlayerState({
                             currentTrack: currentTrack,
@@ -411,6 +524,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+            
+            console.log('Global player initialization complete');
+        } else {
+            console.warn('Global player element not found');
         }
         
         // 4. Search Bar Logic

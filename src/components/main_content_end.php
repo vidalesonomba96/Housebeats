@@ -31,7 +31,8 @@
     <div class="player-left">
         <div id="player-artwork-container">
             <img id="player-artwork" src="https://placehold.co/56" alt="Beat Artwork">
-            <div class="artwork-preview-name" style="display:none;"></div> </div>
+            <div class="artwork-preview-name" style="display:none;"></div>
+        </div>
         <div class="player-track-info">
             <div id="player-title">Track Title</div>
             <div id="player-producer">Producer Name</div>
