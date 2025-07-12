@@ -34,16 +34,19 @@ if (session_status() == PHP_SESSION_NONE) {
     <!-- Global Stylesheets -->
     <link rel="stylesheet" href="src/css/styles.css">
     <link rel="stylesheet" href="src/css/notifications.css">
-    <link rel="stylesheet" href="src/css/cart.css">
 
     <?php
-    // --- THIS IS THE FIX ---
-    // Conditionally load the cart stylesheet ONLY on the cart page.
+    // Conditionally load page-specific stylesheets
     $current_page = basename($_SERVER['PHP_SELF']);
     if ($current_page == 'cart.php') {
         echo '<link rel="stylesheet" href="src/css/cart.css">';
     }
-    // You can add more 'else if' blocks here for other page-specific stylesheets.
+    if ($current_page == 'dashboard.php') {
+        echo '<link rel="stylesheet" href="src/css/dashboard.css">';
+    }
+    if ($current_page == 'upload.php') {
+        echo '<link rel="stylesheet" href="src/css/upload.css">';
+    }
     ?>
 
 </head>

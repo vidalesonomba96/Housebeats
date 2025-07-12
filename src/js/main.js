@@ -3,6 +3,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const toastContainer = document.getElementById('toast-container');
     const cartItemCount = document.getElementById('cart-item-count');
 
+    // --- Global Player State Management ---
+    const PLAYER_STORAGE_KEY = 'housebeats_player_state';
+    
+    function savePlayerState(state) {
+        try {
+            localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+            console.warn('Could not save player state:', e);
+        }
+    }
+    
+    function loadPlayerState() {
+        try {
+            const saved = localStorage.getItem(PLAYER_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+            console.warn('Could not load player state:', e);
+            return null;
+        }
+    }
+    
+    function clearPlayerState() {
+        try {
+            localStorage.removeItem(PLAYER_STORAGE_KEY);
+        } catch (e) {
+            console.warn('Could not clear player state:', e);
+        }
+    }
+
     /**
      * Creates and displays a toast notification.
      * @param {string} message The message to display.
@@ -175,23 +204,85 @@ document.addEventListener('DOMContentLoaded', () => {
             const playerTitle = document.getElementById('player-title');
             const playerProducer = document.getElementById('player-producer');
             const playerArtwork = document.getElementById('player-artwork');
+            const playerGenre = document.getElementById('player-genre');
+            const playerBpm = document.getElementById('player-bpm');
+            const playerKey = document.getElementById('player-key');
+            const playerMood = document.getElementById('player-mood');
             
             const beatCards = Array.from(document.querySelectorAll('.beat-card'));
             const playlist = beatCards.map(card => card.dataset);
             let currentTrackIndex = -1;
             let isPlaying = false;
+            
+            // Load saved player state on page load
+            const savedState = loadPlayerState();
+            if (savedState && savedState.currentTrack) {
+                // Find the track in current playlist or use saved data
+                const trackIndex = playlist.findIndex(track => 
+                    track.beatId === savedState.currentTrack.beatId
+                );
+                
+                if (trackIndex !== -1) {
+                    // Track found in current playlist
+                    loadTrack(trackIndex, false);
+                    if (savedState.currentTime) {
+                        audio.currentTime = savedState.currentTime;
+                    }
+                    if (savedState.isPlaying) {
+                        playTrack();
+                    }
+                } else {
+                    // Track not in current playlist, use saved data
+                    loadTrackFromSavedData(savedState.currentTrack);
+                    if (savedState.currentTime) {
+                        audio.currentTime = savedState.currentTime;
+                    }
+                    if (savedState.isPlaying) {
+                        playTrack();
+                    }
+                }
+                player.classList.add('visible');
+            }
 
-            const loadTrack = (index) => {
+            const loadTrack = (index, autoPlay = true) => {
                 if (index < 0 || index >= playlist.length) return;
                 currentTrackIndex = index;
                 const track = playlist[index];
                 
-                playerTitle.textContent = track.title;
-                playerProducer.textContent = track.producer;
+                playerTitle.textContent = track.title || 'Unknown Track';
+                playerProducer.textContent = track.producer || 'Unknown Producer';
                 playerArtwork.src = track.artworkSrc || 'https://placehold.co/56';
+                if (playerGenre) playerGenre.textContent = track.genre || '';
+                if (playerBpm) playerBpm.textContent = track.bpm ? `${track.bpm} BPM` : '';
+                if (playerKey) playerKey.textContent = track.key || '';
+                if (playerMood) playerMood.textContent = track.mood || '';
                 audio.src = track.audioSrc;
                 
-                playTrack();
+                // Save current track state
+                savePlayerState({
+                    currentTrack: track,
+                    currentTime: 0,
+                    isPlaying: false
+                });
+                
+                if (autoPlay) {
+                    playTrack();
+                }
+                player.classList.add('visible');
+            };
+            
+            const loadTrackFromSavedData = (trackData) => {
+                currentTrackIndex = -1; // Not in current playlist
+                
+                playerTitle.textContent = trackData.title || 'Unknown Track';
+                playerProducer.textContent = trackData.producer || 'Unknown Producer';
+                playerArtwork.src = trackData.artworkSrc || 'https://placehold.co/56';
+                if (playerGenre) playerGenre.textContent = trackData.genre || '';
+                if (playerBpm) playerBpm.textContent = trackData.bpm ? `${trackData.bpm} BPM` : '';
+                if (playerKey) playerKey.textContent = trackData.key || '';
+                if (playerMood) playerMood.textContent = trackData.mood || '';
+                audio.src = trackData.audioSrc;
+                
                 player.classList.add('visible');
             };
 
@@ -200,6 +291,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 audio.play().catch(e => console.error("Audio play failed:", e));
                 playPauseGlobalBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 updateAllCardIcons();
+                
+                // Update saved state
+                const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                if (currentTrack) {
+                    savePlayerState({
+                        currentTrack: currentTrack,
+                        currentTime: audio.currentTime,
+                        isPlaying: true
+                    });
+                }
             };
 
             const pauseTrack = () => {
@@ -207,6 +308,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 audio.pause();
                 playPauseGlobalBtn.innerHTML = '<i class="fas fa-play"></i>';
                 updateAllCardIcons();
+                
+                // Update saved state
+                const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                if (currentTrack) {
+                    savePlayerState({
+                        currentTrack: currentTrack,
+                        currentTime: audio.currentTime,
+                        isPlaying: false
+                    });
+                }
             };
 
             const updateAllCardIcons = () => {
@@ -219,8 +330,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             };
 
-            const playNext = () => loadTrack((currentTrackIndex + 1) % playlist.length);
-            const playPrev = () => loadTrack((currentTrackIndex - 1 + playlist.length) % playlist.length);
+            const playNext = () => {
+                if (currentTrackIndex >= 0 && playlist.length > 0) {
+                    loadTrack((currentTrackIndex + 1) % playlist.length);
+                }
+            };
+            
+            const playPrev = () => {
+                if (currentTrackIndex >= 0 && playlist.length > 0) {
+                    loadTrack((currentTrackIndex - 1 + playlist.length) % playlist.length);
+                }
+            };
 
             playPauseGlobalBtn?.addEventListener('click', () => (isPlaying ? pauseTrack() : playTrack()));
             nextBtn?.addEventListener('click', playNext);
@@ -232,9 +352,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     const formatTime = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
                     currentTimeEl.textContent = formatTime(audio.currentTime);
                     totalTimeEl.textContent = formatTime(audio.duration);
+                    
+                    // Periodically save current time
+                    const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                    if (currentTrack && Math.floor(audio.currentTime) % 5 === 0) { // Save every 5 seconds
+                        savePlayerState({
+                            currentTrack: currentTrack,
+                            currentTime: audio.currentTime,
+                            isPlaying: isPlaying
+                        });
+                    }
                 }
             });
-            audio.addEventListener('ended', playNext);
+            
+            audio.addEventListener('ended', () => {
+                playNext();
+            });
+            
+            audio.addEventListener('pause', () => {
+                // Update state when audio is paused
+                const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                if (currentTrack) {
+                    savePlayerState({
+                        currentTrack: currentTrack,
+                        currentTime: audio.currentTime,
+                        isPlaying: false
+                    });
+                }
+            });
 
             progressBar?.addEventListener('click', (e) => {
                 if(audio.duration) {
@@ -251,6 +396,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         loadTrack(index);
                     }
                 });
+            });
+            
+            // Clear player state when page is unloaded (optional)
+            window.addEventListener('beforeunload', () => {
+                if (audio.src && !audio.paused) {
+                    const currentTrack = currentTrackIndex >= 0 ? playlist[currentTrackIndex] : null;
+                    if (currentTrack) {
+                        savePlayerState({
+                            currentTrack: currentTrack,
+                            currentTime: audio.currentTime,
+                            isPlaying: !audio.paused
+                        });
+                    }
+                }
             });
         }
         
